@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8">
+  <title>Lina Cafe - Κάλεσε τον σερβιτόρο</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <div class="card">
+    <h2>Lina Cafe</h2>
+    <p>Σκάναρε και κάλεσε τον σερβιτόρο</p>
+    <p id="table"></p>
+    <button id="callBtn">Κάλεσε τον σερβιτόρο</button>
+    <p id="status"></p>
+  </div>
+
+  <script>
+    const tableId = location.pathname.split('/').pop();
+    document.getElementById('table').textContent = `Τραπέζι ${tableId}`;
+    const socket = io('/', { auth: { role: 'customer', tableId } });
+    const btn = document.getElementById('callBtn');
+    const status = document.getElementById('status');
+
+    btn.onclick = () => {
+      btn.disabled = true;
+      status.textContent = 'Ειδοποιούμε τον σερβιτόρο...';
+      socket.emit('call:request');
+    };
+
+    socket.on('call:ack', () => {
+      status.textContent = 'Ο σερβιτόρος ειδοποιήθηκε!';
+      setTimeout(() => btn.disabled = false, 15000);
+    });
+  </script>
+</body>
+</html>
