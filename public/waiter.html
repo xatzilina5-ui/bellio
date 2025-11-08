@@ -12,9 +12,13 @@
     <div id="calls" class="list"></div>
   </div>
 
+  <!-- 🔔 Προστέθηκε ο ήχος ειδοποίησης -->
+  <audio id="alertSound" src="/ding.mp3" preload="auto"></audio>
+
   <script>
     const socket = io('/', { auth: { role: 'waiter' } });
     const list = document.getElementById('calls');
+    const audio = document.getElementById('alertSound');
 
     function addCall(c) {
       const div = document.createElement('div');
@@ -28,7 +32,18 @@
     }
 
     socket.on('calls:init', cs => cs.forEach(addCall));
-    socket.on('call:new', addCall);
+
+    // 🔔 Όταν φτάνει νέα κλήση:
+    socket.on('call:new', c => {
+      addCall(c);
+      if (audio) {
+        audio.currentTime = 0; // επανεκκίνηση ήχου
+        audio.play().catch(() => {
+          console.warn('Δεν έγινε αναπαραγωγή ήχου (πιθανόν από δικαιώματα browser)');
+        });
+      }
+    });
+
     socket.on('call:resolved', ({ callId }) => {
       const item = [...list.children].find(x => x.dataset.id == callId);
       if (item) item.remove();
@@ -36,3 +51,4 @@
   </script>
 </body>
 </html>
+
