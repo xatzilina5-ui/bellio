@@ -28,6 +28,42 @@ if ("serviceWorker" in navigator) {
 }
 
     const socket = io('/', { auth: { role: 'waiter' } });
+    // ---- Push Notifications ----
+const vapidPublicKey = BEclA7cg9b7WkPfA3GZeKYZY7o4etuXymIwr148WP2OzSvKrZHLe5POFXhWM5XF1PJ-U41ASAPFz9eFGutTM2WE;
+
+if ("serviceWorker" in navigator && "PushManager" in window) {
+  navigator.serviceWorker.ready.then((reg) => {
+    return reg.pushManager.getSubscription().then((sub) => {
+      if (sub === null) {
+        const convertedKey = urlBase64ToUint8Array(vapidPublicKey);
+        reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: convertedKey
+        }).then((newSub) => {
+          fetch("/subscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newSub)
+          });
+        });
+      }
+    });
+  });
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
     const list = document.getElementById('calls');
     const audio = document.getElementById('alertSound');
 
@@ -62,5 +98,6 @@ if ("serviceWorker" in navigator) {
   </script>
 </body>
 </html>
+
 
 
