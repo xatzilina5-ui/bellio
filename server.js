@@ -1,4 +1,11 @@
-const webpush = require("web-push");
+require('dotenv').config();
+const express = require('express');
+const path = require('path');
+const http = require('http');
+const { Server } = require('socket.io');
+const QRCode = require('qrcode');
+const webpush = require('web-push');
+
 
 webpush.setVapidDetails(
   "mailto:info@bellio.app",
@@ -25,6 +32,13 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
+
+// --- Προσθήκη web-push ---
+webpush.setVapidDetails(
+  "mailto:info@bellio.app",
+  process.env.VAPID_PUBLIC_KEY,
+  process.env.VAPID_PRIVATE_KEY
+);
 
 let calls = [];
 let lastId = 0;
@@ -68,6 +82,7 @@ function sendPushNotification(payload) {
 }
 
 io.on('connection', socket => {
+  console.log('✅ Νέα σύνδεση:', socket.handshake.auth);
   const role = socket.handshake.auth?.role;
   const tableId = socket.handshake.auth?.tableId;
 
@@ -102,5 +117,6 @@ io.on('connection', socket => {
 });
 
 server.listen(PORT, () => console.log(`Lina Cafe running on ${BASE_URL}`));
+
 
 
