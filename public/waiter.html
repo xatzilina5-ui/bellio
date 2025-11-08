@@ -2,7 +2,7 @@
 <html lang="el">
 <head>
   <meta charset="UTF-8">
-  <title>Lina Cafe - Πίνακας Σερβιτόρου</title>
+  <title>Bellio - Πίνακας Σερβιτόρου</title>
   <link rel="stylesheet" href="/style.css">
   <script src="/socket.io/socket.io.js"></script>
   <link rel="manifest" href="/manifest.json">
@@ -14,56 +14,25 @@
     <div id="calls" class="list"></div>
   </div>
 
-  <!-- 🔔 Προστέθηκε ο ήχος ειδοποίησης -->
+  <!-- 🔔 Ήχος ειδοποίησης -->
   <audio id="alertSound" src="/ding.mp3" preload="auto"></audio>
 
   <script>
+    // -------------------------------
     // Εγγραφή service worker (για εγκατάσταση ως app)
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/service-worker.js").then(() => {
-    console.log("Service Worker registered ✅");
-  }).catch((err) => {
-    console.error("Service Worker registration failed:", err);
-  });
-}
+    // -------------------------------
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/service-worker.js").then(() => {
+        console.log("Service Worker registered ✅");
+      }).catch((err) => {
+        console.error("Service Worker registration failed:", err);
+      });
+    }
 
+    // -------------------------------
+    // Socket.IO σύνδεση
+    // -------------------------------
     const socket = io('/', { auth: { role: 'waiter' } });
-    // ---- Push Notifications ----
-const vapidPublicKey = BEclA7cg9b7WkPfA3GZeKYZY7o4etuXymIwr148WP2OzSvKrZHLe5POFXhWM5XF1PJ-U41ASAPFz9eFGutTM2WE;
-
-if ("serviceWorker" in navigator && "PushManager" in window) {
-  navigator.serviceWorker.ready.then((reg) => {
-    return reg.pushManager.getSubscription().then((sub) => {
-      if (sub === null) {
-        const convertedKey = urlBase64ToUint8Array(vapidPublicKey);
-        reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: convertedKey
-        }).then((newSub) => {
-          fetch("/subscribe", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(newSub)
-          });
-        });
-      }
-    });
-  });
-}
-
-function urlBase64ToUint8Array(base64String) {
-  const padding = "=".repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, "+")
-    .replace(/_/g, "/");
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
-
     const list = document.getElementById('calls');
     const audio = document.getElementById('alertSound');
 
@@ -80,13 +49,16 @@ function urlBase64ToUint8Array(base64String) {
 
     socket.on('calls:init', cs => cs.forEach(addCall));
 
-    // 🔔 Όταν φτάνει νέα κλήση:
+    // -------------------------------
+    // Νέα Κλήση Πελάτη
+    // -------------------------------
     socket.on('call:new', c => {
+      console.log("📩 Νέα κλήση έφτασε από τον server:", c);
       addCall(c);
       if (audio) {
-        audio.currentTime = 0; // επανεκκίνηση ήχου
+        audio.currentTime = 0; // Επανεκκίνηση ήχου
         audio.play().catch(() => {
-          console.warn('Δεν έγινε αναπαραγωγή ήχου (πιθανόν από δικαιώματα browser)');
+          console.warn('⚠️ Δεν έγινε αναπαραγωγή ήχου (πιθανόν λόγω ρυθμίσεων browser)');
         });
       }
     });
@@ -95,9 +67,45 @@ function urlBase64ToUint8Array(base64String) {
       const item = [...list.children].find(x => x.dataset.id == callId);
       if (item) item.remove();
     });
+
+    // -------------------------------
+    // Push Notifications (εγγραφή)
+    // -------------------------------
+    const vapidPublicKey = "BEclA7cg9b7WkPfA3GZeKYZY7o4etuXymIwr148WP2OzSvKrZHLe5POFXhWM5XF1PJ-U41ASAPFz9eFGutTM2WE";
+
+    if ("serviceWorker" in navigator && "PushManager" in window) {
+      navigator.serviceWorker.ready.then((reg) => {
+        return reg.pushManager.getSubscription().then((sub) => {
+          if (sub === null) {
+            const convertedKey = urlBase64ToUint8Array(vapidPublicKey);
+            reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: convertedKey
+            }).then((newSub) => {
+              fetch("/subscribe", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(newSub)
+              });
+            });
+          }
+        });
+      });
+    }
+
+    function urlBase64ToUint8Array(base64String) {
+      const padding = "=".repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding)
+        .replace(/-/g, "+")
+        .replace(/_/g, "/");
+      const rawData = window.atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+      for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+      }
+      return outputArray;
+    }
   </script>
 </body>
 </html>
-
-
 
