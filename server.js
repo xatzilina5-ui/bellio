@@ -1,3 +1,14 @@
+import webpush from "web-push";
+
+webpush.setVapidDetails(
+  "mailto:info@bellio.app",
+  process.env.VAPID_PUBLIC_KEY,
+  process.env.VAPID_PRIVATE_KEY
+);
+
+// Θα κρατάμε εδώ προσωρινά τις εγγραφές των σερβιτόρων
+const subscriptions = [];
+
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
@@ -40,6 +51,21 @@ app.get('/qr/:tableId', async (req, res) => {
     res.status(500).send('Error generating QR');
   }
 });
+// Αποθήκευση συνδρομής push
+app.post("/subscribe", express.json(), (req, res) => {
+  const subscription = req.body;
+  subscriptions.push(subscription);
+  res.status(201).json({ message: "Subscribed successfully." });
+});
+
+// Συνάρτηση για αποστολή push ειδοποίησης
+function sendPushNotification(payload) {
+  subscriptions.forEach(sub => {
+    webpush.sendNotification(sub, JSON.stringify(payload)).catch(err => {
+      console.error("Push error:", err);
+    });
+  });
+}
 
 io.on('connection', socket => {
   const role = socket.handshake.auth?.role;
@@ -56,6 +82,12 @@ io.on('connection', socket => {
     socket.emit('call:ack', { callId: call.id });
     io.sockets.sockets.forEach(s => {
       if (s.handshake.auth?.role === 'waiter') s.emit('call:new', call);
+      sendPushNotification({
+  title: "Νέα Κλήση Πελάτη 🔔",
+  body: `Το τραπέζι ${call.tableId} ζητά εξυπηρέτηση.`,
+  icon: "/logo.png"
+});
+
     });
   });
 
@@ -70,3 +102,4 @@ io.on('connection', socket => {
 });
 
 server.listen(PORT, () => console.log(`Lina Cafe running on ${BASE_URL}`));
+
