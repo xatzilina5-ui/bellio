@@ -1,4 +1,4 @@
-import webpush from "web-push";
+const webpush = require("web-push");
 
 webpush.setVapidDetails(
   "mailto:info@bellio.app",
@@ -102,4 +102,5 @@ io.on('connection', socket => {
 });
 
 server.listen(PORT, () => console.log(`Lina Cafe running on ${BASE_URL}`));
+
 
