@@ -5,6 +5,8 @@
   <title>Lina Cafe - Πίνακας Σερβιτόρου</title>
   <link rel="stylesheet" href="/style.css">
   <script src="/socket.io/socket.io.js"></script>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#4c1d95">
 </head>
 <body>
   <div class="card">
@@ -16,6 +18,15 @@
   <audio id="alertSound" src="/ding.mp3" preload="auto"></audio>
 
   <script>
+    // Εγγραφή service worker (για εγκατάσταση ως app)
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/service-worker.js").then(() => {
+    console.log("Service Worker registered ✅");
+  }).catch((err) => {
+    console.error("Service Worker registration failed:", err);
+  });
+}
+
     const socket = io('/', { auth: { role: 'waiter' } });
     const list = document.getElementById('calls');
     const audio = document.getElementById('alertSound');
@@ -51,4 +62,5 @@
   </script>
 </body>
 </html>
+
 
